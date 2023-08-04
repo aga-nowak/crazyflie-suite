@@ -1,0 +1,8 @@
+cflib
+cfclient
+numpy
+pandas
+matplotlib
+jupyterlab
+pyyaml
+pre-commit

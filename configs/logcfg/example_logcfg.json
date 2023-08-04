@@ -1,0 +1,76 @@
+{
+    "attitude":{
+        "name": "attitude",
+        "type": "CF",
+        "period": 10,
+        "variables": ["stabilizer.roll",
+                      "stabilizer.pitch",
+                      "stabilizer.yaw"],
+        "headers": ["roll", "pitch", "yaw"]
+    },
+
+    "state":{
+        "name": "state",
+        "type": "CF",
+        "period": 10,
+        "variables": ["stateEstimate.x",
+                      "stateEstimate.y",
+                      "stateEstimate.z",
+                      "stateEstimate.vx",
+                      "stateEstimate.vy",
+                      "stateEstimate.vz"],
+        "headers": ["stateX", "stateY", "stateZ", "stateVX", "stateVY", "stateVZ"]
+    },
+
+    "motion":{
+        "name": "motion",
+        "type": "CF",
+        "period": 10,
+        "variables": ["motion.deltaX",
+                      "motion.deltaY"],
+        "headers": ["FlowX","FlowY"]
+    },
+
+    "command":{
+        "name": "controller",
+        "type": "CF",
+        "period": 10,
+        "variables": ["controller.actuatorThrust",
+                      "controller.roll",
+                      "controller.pitch",
+                      "controller.yawRate"],
+        "headers": ["commandT","commandR","commandP","commandYR"]
+    },
+
+    "motor":{
+        "name": "motor",
+        "type": "CF",
+        "period": 10,
+        "variables": ["motor.m1",
+                      "motor.m2",
+                      "motor.m3",
+                      "motor.m4"],
+        "headers": ["m1","m2","m3","m4"]
+    },
+
+    "ot0":{
+        "name": "ot0",
+        "type": "EXT",
+        "period": 10,
+        "variables": ["otX0",
+                      "otY0",
+                      "otZ0",
+                      "otRoll0",
+                      "otPitch0",
+                      "otYaw0"],
+        "headers": ["otX0", "otY0", "otZ0", "otRoll0", "otPitch0", "otYaw0"]
+    },
+
+    "jevois":{
+        "name": "jevois",
+        "type": "CF",
+        "period": 10,
+        "variables": ["jevois.timestamp"],
+        "headers": ["CameraTime"]
+    }
+}
