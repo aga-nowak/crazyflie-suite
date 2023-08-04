@@ -6,7 +6,7 @@ Flight and data analysis framework for Crazyflies.
 Ideally, make use of a Python virtual environment:
 ```bash
 $ sudo apt install python3-venv
-$ git clone https://github.com/Huizerd/crazyflie-suite.git
+$ git clone https://github.com/esanchezlaulhe/crazyflie-suite-jevois.git
 $ cd crazyflie-suite
 $ python3 -m venv venv
 $ source venv/bin/activate
