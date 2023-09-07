@@ -32,45 +32,40 @@ class gateIMAV:
         self._logconfig.data_received_cb.add_callback(self._log_cb)
         self._logconfig.start()
 
-        # x = data['stateEstimate.x']
-        # y = data['stateEstimate.y']
-        # z = data['stateEstimate.z']
-
-        # yawrate = 0.05*errory
-        # zdistance = 0.05*errorx + z
-
         try:
-            wait = 10
+            wait = 5
             time_passed = 0.0
             while time_passed < wait:
-        #         cf.commander.send_position_setpoint(scf, 0.0, 0.0, 1.0, 0.0,)
+                cf.commander.send_position_setpoint(0.0, 0.0, 1.0, 0.0,)
                 time.sleep(0.05)
                 time_passed += 0.05
             t0=self.time
             printtime = 0.0
+            yawrateold = 0
+            zdold = 1
             while True:
-                # z = self._data['stateEstimate.z']
+                z = self._data['stateEstimate.z']
                 errorx = self._data['jevois.errorx']
                 errory = self._data['jevois.errory']
                 # print(self.time-t0)
                 if (self.time-t0) > printtime:
                     print(errorx,errory)
-                    printtime += 5
-                # yawrate = 0.8*yawrateold + 0.2*0.05*errory
-                # zdistance = 0.8*zdold + 0.2*(0.05*errorx + z)
-                # cf.commander.send_zdistance_setpoint(scf, 0.0, -5.0, yawrate, zdistance)
-                # yawrateold = yawrate
-                # zdold = zdistance
+                    printtime += 1
+                yawrate = 0.8*yawrateold + 0.2*0.05*errory
+                zdistance = 0.8*zdold + 0.2*(0.05*errorx + z)
+                cf.commander.send_zdistance_setpoint(0.0, -5.0, yawrate, zdistance)
+                yawrateold = yawrate
+                zdold = zdistance
         except KeyboardInterrupt:
             print('landing')
-        #     wait = 10
-        #     time_passed = 0.0
-        #     while time_passed < wait:
-        #         x = data['stateEstimate.x']
-        #         y = data['stateEstimate.y']
-        #         cf.commander.send_position_setpoint(scf, x, y, 0.0,0.0)
-        #         time.sleep(0.05)
-        #         time_passed += 0.05
+            wait = 10
+            time_passed = 0.0
+            while time_passed < wait:
+                x = self._data['stateEstimate.x']
+                y = self._data['stateEstimate.y']
+                cf.commander.send_position_setpoint(x, y, 0.0, 0.0)
+                time.sleep(0.05)
+                time_passed += 0.05
             print('landed')
             self._logconfig.stop()
 
@@ -91,9 +86,9 @@ if __name__ == '__main__':
     cflib.crtp.init_drivers()
 
     lg_stab = LogConfig(name='', period_in_ms=10)
-    # lg_stab.add_variable('stateEstimate.x', 'float')
-    # lg_stab.add_variable('stateEstimate.y', 'float')
-    # lg_stab.add_variable('stateEstimate.z', 'float')
+    lg_stab.add_variable('stateEstimate.x', 'float')
+    lg_stab.add_variable('stateEstimate.y', 'float')
+    lg_stab.add_variable('stateEstimate.z', 'float')
     # lg_stab.add_variable('stateEstimate.pitch', 'float')
     # lg_stab.add_variable('stateEstimate.roll', 'float')
     # lg_stab.add_variable('stateEstimate.yaw', 'float')
