@@ -55,28 +55,28 @@ class gateIMAV:
             x = 0
             # Control with jevois (until certain x distance)
             print('window detection')
-            while x < 4:
+            while x < 4: # distance to gate
                 # get x, z and jevois error
                 x = self._data['stateEstimate.x']
                 z = self._data['stateEstimate.z']
                 errorx = self._data['jevois.errorx']
                 errory = self._data['jevois.errory']
                 # printing errors to debug
-                if (self.time-t0) > printtime:
-                    print(errorx,errory)
-                    printtime += 1
                 # Computing yawrate and zdistance for the commander (filtered)
-                yawrate = 0.8*yawrateold + 0.2*0.05*errory
-                zdistance = 0.8*zdold + 0.2*(0.05*errorx + z)
+                yawrate = 0.8*yawrateold - 0.2*0.2*errory
+                zdistance = 0.8*zdold + 0.2*(0.01*errorx + z)
+                if (self.time-t0) > printtime:
+                    print(yawrate,zdistance)
+                    printtime += 1
                 # Commanding roll, pitch, yaw rate and z position
-                cf.commander.send_zdistance_setpoint(0.0, -5.0, yawrate, zdistance)
+                cf.commander.send_zdistance_setpoint(0.0, -10.0, yawrate, zdistance)
                 # Keeping the last values to filtering
                 yawrateold = yawrate
                 zdold = zdistance
             print('window passed')
-            while x < 8:
+            while x < 8: # total distance = to gate + after gate
                 # Command position, final of the lane (x=8.5,y=0,z=1, yaw=0)
-                cf.commander.send_position_setpoint(8.5, 0.0, 1.0, 0.0)
+                cf.commander.send_position_setpoint(8.5, 0.0, 1.0, 0.0) # depends on total distance
             print('landing')
             # Time for landing and time counter
             wait = 5
@@ -130,8 +130,8 @@ if __name__ == '__main__':
     # lg_stab.add_variable('stateEstimate.pitch', 'float')
     # lg_stab.add_variable('stateEstimate.roll', 'float')
     # lg_stab.add_variable('stateEstimate.yaw', 'float')
-    lg_stab.add_variable('jevois.errorx', 'uint32_t')
-    lg_stab.add_variable('jevois.errory', 'uint32_t')
+    lg_stab.add_variable('jevois.errorx', 'int16_t')
+    lg_stab.add_variable('jevois.errory', 'int16_t')
     # lg_stab.add_variable('motion.deltaX', 'float')
     # lg_stab.add_variable('motion.deltaY', 'float')
     
