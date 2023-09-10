@@ -46,6 +46,8 @@ class gateIMAV:
             error_x = self._data['jevois.errorx']
             error_y = self._data['jevois.errory']
 
+            print(error_x, error_y)
+
             # Computing yawrate and zdistance for the commander (filtered)
             alpha_yaw = 0.8
             beta_yaw = 0.2
