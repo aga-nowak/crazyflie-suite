@@ -67,10 +67,12 @@ class gateIMAV:
 
 
     def fly_forward(self, time_limit):
+        z = self._data['stateEstimate.z']
         time_passed = 0.0
         while time_passed < time_limit:
             # Command position, final of the lane (x=8.5,y=0,z=1, yaw=0)
             cf.commander.send_position_setpoint(8.5, 0.0, 1.0, 0.0) # depends on total distance
+            cf.commander.send_zdistance_setpoint(0.0, -10, 0.0, z)
             time.sleep(0.05)
             time_passed += 0.05
 
