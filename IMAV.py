@@ -80,7 +80,7 @@ class gateIMAV:
     
     def landing(self):
         time_passed = 0.0
-        while time_passed < 10:
+        while time_passed < 10 or self._data['stateEstimate.z'] < 0.1:
             x = self._data['stateEstimate.x']
             y = self._data['stateEstimate.y']
             cf.commander.send_position_setpoint(x, y, 0.0, 0.0)
