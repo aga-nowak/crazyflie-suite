@@ -6,9 +6,9 @@ from cflib.utils import uri_helper
 
 from cflib.crazyflie.log import LogConfig
 
-uri = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E7E7')
-
+URI = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E7E7')
 DEAFULT_HEIGHT = 1.0
+
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
 
@@ -130,7 +130,7 @@ if __name__ == '__main__':
     
     cf=Crazyflie(rw_cache="./cache")
     # Open link for connection
-    cf.open_link(uri)
+    cf.open_link(URI)
     
     timeout = 10
     while not cf.is_connected() and timeout<=0:
