@@ -40,6 +40,7 @@ class gateIMAV:
         # Control with jevois
         print('Window detection')
         time_passed = 0.0
+        z_distance = 1
         while time_passed < time_limit:
             # get x, z and jevois error
             z = self._data['stateEstimate.z']
@@ -116,7 +117,9 @@ class gateIMAV:
 
 
 if __name__ == '__main__':
+    
     cflib.crtp.init_drivers()
+
 
     # logging configuration (x,y,z and errors)
     lg_stab = LogConfig(name='', period_in_ms=10)
@@ -130,13 +133,18 @@ if __name__ == '__main__':
     lg_stab.add_variable('jevois.errory', 'int16_t')
     # lg_stab.add_variable('motion.deltaX', 'float')
     # lg_stab.add_variable('motion.deltaY', 'float')
+
+
+    
     
     cf=Crazyflie(rw_cache="./cache")
     # Open link for connection
     cf.open_link(URI)
+
+    
     
     timeout = 10
-    while not cf.is_connected() and timeout<=0:
+    while not cf.is_connected() and timeout> 0:
         print("Waiting for Crazyflie connection...")
         time.sleep(2)
         timeout -= 1
