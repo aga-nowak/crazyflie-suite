@@ -1,9 +1,9 @@
 import logging
 import time
+
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.utils import uri_helper
-
 from cflib.crazyflie.log import LogConfig
 
 URI = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E7E7')
@@ -38,7 +38,7 @@ class gateIMAV:
     def fly_through_gate(self, time_limit):
         yaw_rate = 0.0
         # Control with jevois
-        print('window detection')
+        print('Window detection')
         time_passed = 0.0
         while time_passed < time_limit:
             # get x, z and jevois error
@@ -61,10 +61,11 @@ class gateIMAV:
 
             # Commanding roll, pitch, yaw rate and z position
             cf.commander.send_zdistance_setpoint(0.0, -10.0, yaw_rate, z_distance)
-            # Keeping the last values to filtering
+
             time.sleep(0.05)
             time_passed += 0.05
-        print('window passed')
+
+        print('Window passed')
 
 
     def fly_forward(self, time_limit):
@@ -76,7 +77,6 @@ class gateIMAV:
             time.sleep(0.05)
             time_passed += 0.05
 
-
     
     def landing(self):
         time_passed = 0.0
@@ -84,10 +84,11 @@ class gateIMAV:
             x = self._data['stateEstimate.x']
             y = self._data['stateEstimate.y']
             cf.commander.send_position_setpoint(x, y, 0.0, 0.0)
+
             time.sleep(0.05)
             time_passed += 0.05
 
-        print('landed')
+        print('Landed')
         self._logconfig.stop()
 
 
@@ -103,11 +104,11 @@ class gateIMAV:
             self.takeoff()
             self.fly_through_gate(time_limit=5)
             self.fly_forward(time_limit=5)
-            print('landing')
+            print('Landing')
             self.landing()
 
         except KeyboardInterrupt:
-            print('emergency landing')
+            print('\nEmergency landing')
             self.landing()
 
 
@@ -139,7 +140,7 @@ if __name__ == '__main__':
         timeout -= 1
     
     if cf.is_connected():
-        print("connected")
+        print("Connected")
         flight = gateIMAV(cf,lg_stab)
         flight.fly()
         
