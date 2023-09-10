@@ -26,6 +26,32 @@ class gateIMAV:
             self._data[key] = value
         self.time = timestamp/1000
 
+
+    def takeoff(self):
+        # we define a time to take off. This can be changed
+        wait = 5
+        # We initialize a counter for the time
+        time_passed = 0.0
+        while time_passed < wait:
+            # we now send the taking off position (x,y,z,yaw)
+            cf.commander.send_position_setpoint(0.0, 0.0, 1.0, 0.0)
+            time.sleep(0.05)
+            time_passed += 0.05
+
+    
+    def landing(self):
+        wait = 10
+        time_passed = 0.0
+        while time_passed < wait:
+            x = self._data['stateEstimate.x']
+            y = self._data['stateEstimate.y']
+            cf.commander.send_position_setpoint(x, y, 0.0, 0.0)
+            time.sleep(0.05)
+            time_passed += 0.05
+        print('landed')
+        self._logconfig.stop()
+
+
     def fly(self):
         """ Main function """
 
@@ -38,15 +64,7 @@ class gateIMAV:
 
         # Main function for the movement
         try:
-            # we define a time to take off. This can be changed
-            wait = 5
-            # We initialize a counter for the time
-            time_passed = 0.0
-            while time_passed < wait:
-                # we now send the taking off position (x,y,z,yaw)
-                cf.commander.send_position_setpoint(0.0, 0.0, 1.0, 0.0)
-                time.sleep(0.05)
-                time_passed += 0.05
+            self.takeoff()
             # define first yawrate and z, and also initial time and the counter for when to print data on screen
             t0=self.time
             printtime = 0.0
@@ -79,42 +97,11 @@ class gateIMAV:
                 cf.commander.send_position_setpoint(8.5, 0.0, 1.0, 0.0) # depends on total distance
             print('landing')
             # Time for landing and time counter
-            wait = 5
-            time_passed = 0.0
-            while time_passed < wait:
-                # Reading x and y to land in the same position
-                x = self._data['stateEstimate.x']
-                y = self._data['stateEstimate.y']
-                # Landing command (x,y,z=0,yaw=0)
-                cf.commander.send_position_setpoint(x, y, 0.0, 0.0)
-                time.sleep(0.05)
-                time_passed += 0.05
-            print('landed')
-            # stopping the logging
-            self._logconfig.stop()
+            self.landing()
         except KeyboardInterrupt:
             print('emergency landing')
             #same as normal landing
-            wait = 10
-            time_passed = 0.0
-            while time_passed < wait:
-                x = self._data['stateEstimate.x']
-                y = self._data['stateEstimate.y']
-                cf.commander.send_position_setpoint(x, y, 0.0, 0.0)
-                time.sleep(0.05)
-                time_passed += 0.05
-            print('landed')
-            self._logconfig.stop()
-
-
-
-
-
-    def simple_connect():
-
-        print("yeah")
-        time.sleep(3)
-        print("disconnecting")
+            self.landing()
 
 
 
@@ -141,16 +128,13 @@ if __name__ == '__main__':
     cf.open_link(uri)
     # Time counter and integer for connection
     timeout = 10
-    end = 0
     # While for connection timeout
-    while not cf.is_connected() and end<1:
+    while not cf.is_connected() and timeout<=0:
         print("Waiting for Crazyflie connection...")
         time.sleep(2)
         timeout -= 1
-        if timeout<=0:
-            end = 1
     # Running the code only if connected
-    if end < 1:
+    if cf.is_connected():
         print("connected")
         #defining the class and calling the function
         flight = gateIMAV(cf,lg_stab)
