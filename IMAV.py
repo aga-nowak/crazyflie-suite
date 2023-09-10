@@ -13,48 +13,83 @@ logging.basicConfig(level=logging.ERROR)
 class gateIMAV:
      
     def __init__(self, crazyflie,logconf):
-        """ initialize the class variables """
         self._cf = crazyflie
-        # dictionary to hold data from callbacks
         self._data = {}
         self._logconfig = logconf
 
 
     def _log_cb(self, timestamp, data, logconf):
-        """ Logging function. Logs into class variables """
         for key, value in data.items():
             self._data[key] = value
         self.time = timestamp/1000
 
 
     def takeoff(self):
-        # we define a time to take off. This can be changed
-        wait = 5
-        # We initialize a counter for the time
         time_passed = 0.0
-        while time_passed < wait:
+        while time_passed < 5:
             # we now send the taking off position (x,y,z,yaw)
             cf.commander.send_position_setpoint(0.0, 0.0, 1.0, 0.0)
             time.sleep(0.05)
             time_passed += 0.05
 
+
+    def fly_through_gate(self, time_limit):
+        z_distance = 1
+        yaw_rate = 0.0
+        # Control with jevois
+        print('window detection')
+        time_passed = 0.0
+        while time_passed < time_limit:
+            # get x, z and jevois error
+            z = self._data['stateEstimate.z']
+            error_x = self._data['jevois.errorx']
+            error_y = self._data['jevois.errory']
+
+            # Computing yawrate and zdistance for the commander (filtered)
+            alpha_yaw = 0.8
+            beta_yaw = 0.2
+            error_y_gain = 0.2
+            alpha_z = 0.8
+            beta_z = 0.2
+            error_x_gain = 0.01
+
+            yaw_rate = alpha_yaw*yaw_rate - beta_yaw*error_y_gain*error_y
+            z_distance = alpha_z*z_distance + beta_z*(error_x_gain*error_x + z)
+
+            print(yaw_rate,z_distance)
+
+            # Commanding roll, pitch, yaw rate and z position
+            cf.commander.send_zdistance_setpoint(0.0, -10.0, yaw_rate, z_distance)
+            # Keeping the last values to filtering
+            time.sleep(0.05)
+            time_passed += 0.05
+        print('window passed')
+
+
+    def fly_forward(self, time_limit):
+        time_passed = 0.0
+        while time_passed < time_limit:
+            # Command position, final of the lane (x=8.5,y=0,z=1, yaw=0)
+            cf.commander.send_position_setpoint(8.5, 0.0, 1.0, 0.0) # depends on total distance
+            time.sleep(0.05)
+            time_passed += 0.05
+
+
     
     def landing(self):
-        wait = 10
         time_passed = 0.0
-        while time_passed < wait:
+        while time_passed < 10:
             x = self._data['stateEstimate.x']
             y = self._data['stateEstimate.y']
             cf.commander.send_position_setpoint(x, y, 0.0, 0.0)
             time.sleep(0.05)
             time_passed += 0.05
+
         print('landed')
         self._logconfig.stop()
 
 
     def fly(self):
-        """ Main function """
-
         # First we define the logging configuration as the input
         self._cf.log.add_config(self._logconfig)
         # Then we add a callback to log the data into the class variables every time
@@ -62,51 +97,20 @@ class gateIMAV:
         # Then we start the logging
         self._logconfig.start()
 
-        # Main function for the movement
         try:
             self.takeoff()
-            # define first yawrate and z, and also initial time and the counter for when to print data on screen
-            t0=self.time
-            printtime = 0.0
-            yawrateold = 0
-            zdold = 1
-            x = 0
-            # Control with jevois (until certain x distance)
-            print('window detection')
-            while x < 4: # distance to gate
-                # get x, z and jevois error
-                x = self._data['stateEstimate.x']
-                z = self._data['stateEstimate.z']
-                errorx = self._data['jevois.errorx']
-                errory = self._data['jevois.errory']
-                # printing errors to debug
-                # Computing yawrate and zdistance for the commander (filtered)
-                yawrate = 0.8*yawrateold - 0.2*0.2*errory
-                zdistance = 0.8*zdold + 0.2*(0.01*errorx + z)
-                if (self.time-t0) > printtime:
-                    print(yawrate,zdistance)
-                    printtime += 1
-                # Commanding roll, pitch, yaw rate and z position
-                cf.commander.send_zdistance_setpoint(0.0, -10.0, yawrate, zdistance)
-                # Keeping the last values to filtering
-                yawrateold = yawrate
-                zdold = zdistance
-            print('window passed')
-            while x < 8: # total distance = to gate + after gate
-                # Command position, final of the lane (x=8.5,y=0,z=1, yaw=0)
-                cf.commander.send_position_setpoint(8.5, 0.0, 1.0, 0.0) # depends on total distance
+            self.fly_through_gate(time_limit=5)
+            self.fly_forward(time_limit=5)
             print('landing')
-            # Time for landing and time counter
             self.landing()
+
         except KeyboardInterrupt:
             print('emergency landing')
-            #same as normal landing
             self.landing()
 
 
 
 if __name__ == '__main__':
-    # init drivers (from the tutorial)
     cflib.crtp.init_drivers()
 
     # logging configuration (x,y,z and errors)
@@ -122,21 +126,18 @@ if __name__ == '__main__':
     # lg_stab.add_variable('motion.deltaX', 'float')
     # lg_stab.add_variable('motion.deltaY', 'float')
     
-    # Defining the crazyflie class
     cf=Crazyflie(rw_cache="./cache")
     # Open link for connection
     cf.open_link(uri)
-    # Time counter and integer for connection
+    
     timeout = 10
-    # While for connection timeout
     while not cf.is_connected() and timeout<=0:
         print("Waiting for Crazyflie connection...")
         time.sleep(2)
         timeout -= 1
-    # Running the code only if connected
+    
     if cf.is_connected():
         print("connected")
-        #defining the class and calling the function
         flight = gateIMAV(cf,lg_stab)
         flight.fly()
         
