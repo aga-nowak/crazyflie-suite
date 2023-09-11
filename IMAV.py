@@ -30,40 +30,51 @@ class gateIMAV:
         time_passed = 0.0
         while time_passed < 5:
             # we now send the taking off position (x,y,z,yaw)
-            cf.commander.send_position_setpoint(0.0, 0.0, DEAFULT_HEIGHT, 0.0)
+            # self._cf.commander.send_position_setpoint(0.0, 0.0, DEAFULT_HEIGHT, 0.0)
+            self._cf.commander.send_zdistance_setpoint(0.0, 0.0, 0.0, DEAFULT_HEIGHT)
             time.sleep(0.05)
             time_passed += 0.05
 
 
     def fly_through_gate(self, time_limit):
-        yaw_rate = 0.0
-        # Control with jevois
         print('Window detection')
+
+        yaw_rate = 0.0
+        z_distance = DEAFULT_HEIGHT
+
+        width = self._data['jevois.width']
+        height = self._data['jevois.height']
+
         time_passed = 0.0
-        z_distance = 1
-        while time_passed < time_limit:
-            # get x, z and jevois error
+        while time_passed < time_limit and max(width, height) < 180:
+            # get z and jevois errors
             z = self._data['stateEstimate.z']
             error_x = self._data['jevois.errorx']
             error_y = self._data['jevois.errory']
+            width = self._data['jevois.width']
+            height = self._data['jevois.height']
 
             print(error_x, error_y)
 
             # Computing yawrate and zdistance for the commander (filtered)
             alpha_yaw = 0.8
-            beta_yaw = 0.2
-            error_y_gain = 0.2
+            error_y_gain = 0.5
             alpha_z = 0.8
-            beta_z = 0.2
-            error_x_gain = 0.01
+            error_x_gain = 0.001
 
-            yaw_rate = alpha_yaw*yaw_rate - beta_yaw*error_y_gain*error_y
-            z_distance = alpha_z*z_distance + beta_z*(error_x_gain*error_x + z)
+            yaw_rate = alpha_yaw * yaw_rate - (1 - alpha_yaw) * error_y_gain * error_y
+            z_distance = alpha_z * z_distance + (1 - alpha_z) * (error_x_gain * error_x + z)
 
-            print(yaw_rate,z_distance)
+            if z_distance > 1.5:
+                z_distance = 1.5
+
+            # print(f'error_y = {error_y}, error_y_gain = {error_y_gain}, alpha_yaw*yaw_rate={alpha_yaw*yaw_rate}, error_y_gain*error_y={error_y_gain*error_y}, yaw_rate={yaw_rate}')
+            print(f'errorx = {error_x}, errory = {error_y}, width = {width}, height = {height}')
 
             # Commanding roll, pitch, yaw rate and z position
-            cf.commander.send_zdistance_setpoint(0.0, -10.0, yaw_rate, z_distance)
+            self._cf.commander.send_zdistance_setpoint(0.0, -5.0, yaw_rate, z_distance)
+            # self._cf.commander.send_setpoint(30.0, 0.0, 0.0, 40000)
+            # self._cf.commander.send_position_setpoint(0.0, 30.0, DEAFULT_HEIGHT, 0.0)
 
             time.sleep(0.05)
             time_passed += 0.05
@@ -76,17 +87,18 @@ class gateIMAV:
         time_passed = 0.0
         while time_passed < time_limit:
             # Commanding roll, pitch, yaw rate and z position
-            cf.commander.send_zdistance_setpoint(0.0, -10, 0.0, z)
+            self._cf.commander.send_zdistance_setpoint(0.0, -10, 0.0, z)
             time.sleep(0.05)
             time_passed += 0.05
 
     
     def landing(self):
         time_passed = 0.0
-        while time_passed < 10 or self._data['stateEstimate.z'] < 0.1:
+        while time_passed < 10 and self._data['stateEstimate.z'] > 0.1:
             x = self._data['stateEstimate.x']
             y = self._data['stateEstimate.y']
-            cf.commander.send_position_setpoint(x, y, 0.0, 0.0)
+            # self._cf.commander.send_position_setpoint(x, y, 0.0, 0.0)
+            self._cf.commander.send_zdistance_setpoint(0.0, 0.0, 0.0, 0.0)
 
             time.sleep(0.05)
             time_passed += 0.05
@@ -105,8 +117,8 @@ class gateIMAV:
 
         try:
             self.takeoff()
-            self.fly_through_gate(time_limit=5)
-            self.fly_forward(time_limit=5)
+            self.fly_through_gate(time_limit=60)
+            self.fly_forward(time_limit=10)
             print('Landing')
             self.landing()
 
@@ -115,11 +127,8 @@ class gateIMAV:
             self.landing()
 
 
-
 if __name__ == '__main__':
-    
     cflib.crtp.init_drivers()
-
 
     # logging configuration (x,y,z and errors)
     lg_stab = LogConfig(name='', period_in_ms=10)
@@ -131,20 +140,17 @@ if __name__ == '__main__':
     # lg_stab.add_variable('stateEstimate.yaw', 'float')
     lg_stab.add_variable('jevois.errorx', 'int16_t')
     lg_stab.add_variable('jevois.errory', 'int16_t')
+    lg_stab.add_variable('jevois.width', 'int16_t')
+    lg_stab.add_variable('jevois.height', 'int16_t')
     # lg_stab.add_variable('motion.deltaX', 'float')
     # lg_stab.add_variable('motion.deltaY', 'float')
-
-
-    
     
     cf=Crazyflie(rw_cache="./cache")
     # Open link for connection
     cf.open_link(URI)
-
-    
     
     timeout = 10
-    while not cf.is_connected() and timeout> 0:
+    while not cf.is_connected() and timeout > 0:
         print("Waiting for Crazyflie connection...")
         time.sleep(2)
         timeout -= 1
@@ -154,6 +160,3 @@ if __name__ == '__main__':
         flight = gateIMAV(cf,lg_stab)
         flight.fly()
         
-
-
-
