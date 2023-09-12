@@ -54,15 +54,14 @@ class gateIMAV:
             width = self._data['jevois.width']
             height = self._data['jevois.height']
 
-            print(error_x, error_y)
-
             # Computing yawrate and zdistance for the commander (filtered)
             alpha_yaw = 0.8
-            error_y_gain = 0.5
+            # error_y_gain = 0.5
+            error_y_gain = 3
             alpha_z = 0.8
             error_x_gain = 0.001
 
-            yaw_rate = alpha_yaw * yaw_rate - (1 - alpha_yaw) * error_y_gain * error_y
+            yaw_rate = alpha_yaw * yaw_rate - (1 - alpha_yaw) * error_y_gain * error_y + 8
             z_distance = alpha_z * z_distance + (1 - alpha_z) * (error_x_gain * error_x + z)
 
             if z_distance > 1.5:
@@ -118,7 +117,7 @@ class gateIMAV:
         try:
             self.takeoff()
             self.fly_through_gate(time_limit=60)
-            self.fly_forward(time_limit=10)
+            self.fly_forward(time_limit=5)
             print('Landing')
             self.landing()
 
