@@ -1,5 +1,9 @@
 import logging
 import time
+# import the sys library
+import sys
+# import the os library
+import os
 
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
@@ -19,12 +23,27 @@ class gateIMAV:
         self._data = {}
         self._logconfig = logconf
 
+        # Get the files in the current directory:
+        files = os.listdir('.')
+        # Find how many data files there are currently:
+        data_files = [f for f in files if f.startswith('data')]
+        n_data_files = len(data_files)
+
+        # open a file for writing the data:
+        self._pylogfile = open(f'data_{n_data_files+1}.txt', 'w')
+
 
     def _log_cb(self, timestamp, data, logconf):
         for key, value in data.items():
             self._data[key] = value
         self.time = timestamp/1000
 
+    def log_data(self):
+        # get the time in ms from the time package:
+        sys_time = time.time()
+
+        # write the data to the file:
+        self._pylogfile.write(f'{sys_time}, {self.time}, {self._data["stateEstimate.x"]}, {self._data["stateEstimate.y"]}, {self._data["stateEstimate.z"]}, {self._data["jevois.errorx"]}, {self._data["jevois.errory"]}, {self._data["jevois.width"]}, {self._data["jevois.height"]}\n')
 
     def takeoff(self):
         time_passed = 0.0
@@ -32,6 +51,7 @@ class gateIMAV:
             # we now send the taking off position (x,y,z,yaw)
             # self._cf.commander.send_position_setpoint(0.0, 0.0, DEAFULT_HEIGHT, 0.0)
             self._cf.commander.send_zdistance_setpoint(0.0, 0.0, 0.0, DEAFULT_HEIGHT)
+            self.log_data()
             time.sleep(0.05)
             time_passed += 0.05
 
@@ -53,6 +73,9 @@ class gateIMAV:
             error_y = self._data['jevois.errory']
             width = self._data['jevois.width']
             height = self._data['jevois.height']
+
+            # log the data for post-analysis
+            self.log_data()
 
             # Computing yawrate and zdistance for the commander (filtered)
             alpha_yaw = 0.8
@@ -87,6 +110,9 @@ class gateIMAV:
         while time_passed < time_limit:
             # Commanding roll, pitch, yaw rate and z position
             self._cf.commander.send_zdistance_setpoint(0.0, -10, 0.0, z)
+            # log the data:
+            self.log_data()
+
             time.sleep(0.05)
             time_passed += 0.05
 
@@ -98,11 +124,12 @@ class gateIMAV:
             y = self._data['stateEstimate.y']
             # self._cf.commander.send_position_setpoint(x, y, 0.0, 0.0)
             self._cf.commander.send_zdistance_setpoint(0.0, 0.0, 0.0, 0.0)
-
+            self.log_data()
             time.sleep(0.05)
             time_passed += 0.05
 
         print('Landed')
+        self._pylogfile.close()
         self._logconfig.stop()
 
 
