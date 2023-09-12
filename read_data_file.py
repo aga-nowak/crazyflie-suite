@@ -38,6 +38,9 @@ if __name__ == '__main__':
     error_y = data[:,6]
     width = data[:,7]
     height = data[:,8]
+    if(data.shape[1] > 9):
+        yaw_rate = data[:,9]
+        z_distance = data[:,10]
 
     # live plot:
     figure_handle = plt.figure('Live data')
@@ -74,5 +77,16 @@ if __name__ == '__main__':
     plt.plot(time, sys_time, label='sys_time')
     plt.legend()
     plt.show()
+
+    if(data.shape[1] > 9):
+        plt.figure()
+        plt.plot(time, yaw_rate, label='yaw_rate')
+        plt.legend()
+        plt.show()
+
+        plt.figure()
+        plt.plot(time, z_distance, label='z_distance')
+        plt.legend()
+        plt.show()
 
     

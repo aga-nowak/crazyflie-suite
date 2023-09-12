@@ -17,7 +17,7 @@ from IPython import display
 from matplotlib import pyplot as plt
 
 URI = uri_helper.uri_from_env(default='radio://0/80/2M/FDE7E7E701')
-DEAFULT_HEIGHT = 1.0
+DEFAULT_HEIGHT = 1.0
 
 SHOW_DATA_LIVE = False
 
@@ -32,6 +32,9 @@ class gateIMAV:
         self._logconfig = logconf
         self.time = 0
         self.figure_handle = []
+
+        self.yaw_rate = 0.0
+        self.z_distance = DEFAULT_HEIGHT
 
         # Get the files in the current directory:
         files = os.listdir('.')
@@ -53,14 +56,14 @@ class gateIMAV:
         sys_time = time.time()
 
         # write the data to the file:
-        self._pylogfile.write(f'{sys_time}, {self.time}, {self._data["stateEstimate.x"]}, {self._data["stateEstimate.y"]}, {self._data["stateEstimate.z"]}, {self._data["jevois.errorx"]}, {self._data["jevois.errory"]}, {self._data["jevois.width"]}, {self._data["jevois.height"]}\n')
+        self._pylogfile.write(f'{sys_time}, {self.time}, {self._data["stateEstimate.x"]}, {self._data["stateEstimate.y"]}, {self._data["stateEstimate.z"]}, {self._data["jevois.errorx"]}, {self._data["jevois.errory"]}, {self._data["jevois.width"]}, {self._data["jevois.height"]}, {self.yaw_rate}, {self.z_distance}\n')
 
     def takeoff(self):
         time_passed = 0.0
         while time_passed < 5:
             # we now send the taking off position (x,y,z,yaw)
-            # self._cf.commander.send_position_setpoint(0.0, 0.0, DEAFULT_HEIGHT, 0.0)
-            self._cf.commander.send_zdistance_setpoint(0.0, 0.0, 0.0, DEAFULT_HEIGHT)
+            # self._cf.commander.send_position_setpoint(0.0, 0.0, DEFAULT_HEIGHT, 0.0)
+            self._cf.commander.send_zdistance_setpoint(0.0, 0.0, 0.0, DEFAULT_HEIGHT)
             # self.log_data()
             time.sleep(0.05)
             time_passed += 0.05
@@ -70,8 +73,8 @@ class gateIMAV:
         print('Window detection')
 
         yaw_rate = 0.0
-        z_distance = DEAFULT_HEIGHT
-        old_z = DEAFULT_HEIGHT
+        self.z_distance = DEFAULT_HEIGHT
+        old_z = DEFAULT_HEIGHT
 
         width = self._data['jevois.width']
         height = self._data['jevois.height']
@@ -114,19 +117,19 @@ class gateIMAV:
             alpha_z = 0.8
             error_x_gain = 0.001
 
-            yaw_rate = alpha_yaw * yaw_rate - (1 - alpha_yaw) * error_y_gain * error_y + 8
-            z_distance = alpha_z * z_distance + (1 - alpha_z) * (error_x_gain * error_x + z)
+            self.yaw_rate = alpha_yaw * self.yaw_rate - (1 - alpha_yaw) * error_y_gain * error_y + 8
+            self.z_distance = alpha_z * self.z_distance + (1 - alpha_z) * (error_x_gain * error_x + z)
 
-            if z_distance > 1.5:
-                z_distance = 1.5
+            if self.z_distance > 1.5:
+                self.z_distance = 1.5
 
-            # print(f'error_y = {error_y}, error_y_gain = {error_y_gain}, alpha_yaw*yaw_rate={alpha_yaw*yaw_rate}, error_y_gain*error_y={error_y_gain*error_y}, yaw_rate={yaw_rate}')
+            # print(f'error_y = {error_y}, error_y_gain = {error_y_gain}, alpha_yaw*self.yaw_rate={alpha_yaw*self.yaw_rate}, error_y_gain*error_y={error_y_gain*error_y}, self.yaw_rate={self.yaw_rate}')
             print(f'errorx = {error_x}, errory = {error_y}, width = {width}, height = {height}')
 
             # Commanding roll, pitch, yaw rate and z position
-            self._cf.commander.send_zdistance_setpoint(0.0, -5.0, yaw_rate, z_distance)
+            self._cf.commander.send_zdistance_setpoint(0.0, -5.0, self.yaw_rate, self.z_distance)
             # self._cf.commander.send_setpoint(30.0, 0.0, 0.0, 40000)
-            # self._cf.commander.send_position_setpoint(0.0, 30.0, DEAFULT_HEIGHT, 0.0)
+            # self._cf.commander.send_position_setpoint(0.0, 30.0, DEFAULT_HEIGHT, 0.0)
 
             if(SHOW_DATA_LIVE):
                 if(self.figure_handle == []):
