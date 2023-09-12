@@ -30,10 +30,7 @@ def simulate_yaw_rate(filename):
 
             yaw_rates.append(yaw_rate)
 
-    with open('yaw_sim.csv', 'w') as y:
-        wr = csv.writer(y)
-        for yaw_rate in yaw_rates:
-            wr.writerow([yaw_rate])
+    return yaw_rates
 
 
 def read_data(filename):
@@ -71,9 +68,12 @@ if __name__ == '__main__':
     error_y = data[:,6]
     width = data[:,7]
     height = data[:,8]
+    if(data.shape[1] > 9):
+        yaw_rate = data[:,9]
+        z_distance = data[:,10]
 
-    if len(data[0]) <= 9:
-        simulate_yaw_rate(f'data_{n_file}.txt')
+    if data.shape[1] <= 9:
+        yaw_rate = simulate_yaw_rate(f'data_{n_file}.txt')
 
     # live plot:
     # figure_handle = plt.figure('Live data')
@@ -92,23 +92,35 @@ if __name__ == '__main__':
     plt.plot(time, y, label='y')
     plt.plot(time, z, label='z')
     plt.legend()
-    plt.show()
+    # plt.show()
 
     plt.figure()
     plt.plot(time, error_x, label='error_x')
     plt.plot(time, error_y, label='error_y')
     plt.legend()
-    plt.show()
+    # plt.show()
 
     plt.figure()
     plt.plot(time, width, label='width')
     plt.plot(time, height, label='height')
     plt.legend()
-    plt.show()
+    # plt.show()
 
     plt.figure()
     plt.plot(time, sys_time, label='sys_time')
     plt.legend()
+    # plt.show()
+
+    
+    plt.figure()
+    plt.plot(time, yaw_rate, label='yaw_rate')
+    plt.legend()
     plt.show()
+
+    if(data.shape[1] > 9):
+        plt.figure()
+        plt.plot(time, z_distance, label='z_distance')
+        plt.legend()
+        plt.show()
 
     
