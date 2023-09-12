@@ -110,7 +110,7 @@ class gateIMAV:
             # Computing yawrate and zdistance for the commander (filtered)
             alpha_yaw = 0.8
             # error_y_gain = 0.5
-            error_y_gain = 1
+            error_y_gain = 0.25
             alpha_z = 0.8
             error_x_gain = 0.001
 
@@ -124,7 +124,7 @@ class gateIMAV:
             print(f'errorx = {error_x}, errory = {error_y}, width = {width}, height = {height}')
 
             # Commanding roll, pitch, yaw rate and z position
-            self._cf.commander.send_zdistance_setpoint(0.0, -5.0, yaw_rate, z_distance)
+            self._cf.commander.send_zdistance_setpoint(0.0, -10.0, yaw_rate, z_distance)
             # self._cf.commander.send_setpoint(30.0, 0.0, 0.0, 40000)
             # self._cf.commander.send_position_setpoint(0.0, 30.0, DEAFULT_HEIGHT, 0.0)
 
