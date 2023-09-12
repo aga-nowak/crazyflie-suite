@@ -6,7 +6,7 @@ from cflib.crazyflie import Crazyflie
 from cflib.utils import uri_helper
 from cflib.crazyflie.log import LogConfig
 
-URI = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E7E7')
+URI = uri_helper.uri_from_env(default='radio://0/80/2M/FDE7E7E701')
 DEAFULT_HEIGHT = 1.0
 
 # Only output errors from the logging framework
