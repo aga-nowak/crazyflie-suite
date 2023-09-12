@@ -2,14 +2,15 @@
 import sys
 from matplotlib import pyplot as plt
 import numpy as np
-import csv
 
 
 def simulate_yaw_rate(filename):
     yaw_rates = []
+    z_distances = []
 
     with open(filename, 'r') as f:
         yaw_rate = 0.0
+        z_distance = 1.0
 
         while True:
             line = f.readline()
@@ -23,14 +24,26 @@ def simulate_yaw_rate(filename):
 
             alpha_yaw = 0.8
             error_y_gain = 0.25
+            alpha_z = 0.8
+            error_x_gain = 0.001
 
             error_y = float(line[6])
-
             yaw_rate = alpha_yaw * yaw_rate - (1 - alpha_yaw) * error_y_gain * error_y + 8
 
-            yaw_rates.append(yaw_rate)
+            z = float(line[4])
+            old_z = 1.0
 
-    return yaw_rates
+            if abs(old_z - z) > 0.5:
+                z = old_z
+            old_z = z
+
+            error_x = int(line[5])
+            z_distance = alpha_z * z_distance + (1 - alpha_z) * (error_x_gain * error_x + z)
+
+            yaw_rates.append(yaw_rate)
+            z_distances.append(z_distance)
+
+    return yaw_rates, z_distances
 
 
 def read_data(filename):
@@ -73,7 +86,7 @@ if __name__ == '__main__':
         z_distance = data[:,10]
 
     if data.shape[1] <= 9:
-        yaw_rate = simulate_yaw_rate(f'data_{n_file}.txt')
+        yaw_rate, z_distance = simulate_yaw_rate(f'data_{n_file}.txt')
 
     # live plot:
     # figure_handle = plt.figure('Live data')
@@ -115,12 +128,11 @@ if __name__ == '__main__':
     plt.figure()
     plt.plot(time, yaw_rate, label='yaw_rate')
     plt.legend()
-    plt.show()
+    # plt.show()
 
-    if(data.shape[1] > 9):
-        plt.figure()
-        plt.plot(time, z_distance, label='z_distance')
-        plt.legend()
-        plt.show()
+    plt.figure()
+    plt.plot(time, z_distance, label='z_distance')
+    plt.legend()
+    plt.show()
 
     
