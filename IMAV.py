@@ -60,7 +60,7 @@ class gateIMAV:
         while time_passed < 5:
             # we now send the taking off position (x,y,z,yaw)
             # self._cf.commander.send_position_setpoint(0.0, 0.0, DEAFULT_HEIGHT, 0.0)
-            # self._cf.commander.send_zdistance_setpoint(0.0, 0.0, 0.0, DEAFULT_HEIGHT)
+            self._cf.commander.send_zdistance_setpoint(0.0, 0.0, 0.0, DEAFULT_HEIGHT)
             # self.log_data()
             time.sleep(0.05)
             time_passed += 0.05
@@ -71,6 +71,7 @@ class gateIMAV:
 
         yaw_rate = 0.0
         z_distance = DEAFULT_HEIGHT
+        old_z = DEAFULT_HEIGHT
 
         width = self._data['jevois.width']
         height = self._data['jevois.height']
@@ -91,6 +92,10 @@ class gateIMAV:
             width = self._data['jevois.width']
             height = self._data['jevois.height']
 
+            if abs(old_z - z) > 0.5:
+                z = old_z
+            old_z = z
+
             if(SHOW_DATA_LIVE):
                 # add the data to the lists for live plotting
                 times.append(self.time)
@@ -105,7 +110,7 @@ class gateIMAV:
             # Computing yawrate and zdistance for the commander (filtered)
             alpha_yaw = 0.8
             # error_y_gain = 0.5
-            error_y_gain = 3
+            error_y_gain = 1
             alpha_z = 0.8
             error_x_gain = 0.001
 
@@ -119,7 +124,7 @@ class gateIMAV:
             print(f'errorx = {error_x}, errory = {error_y}, width = {width}, height = {height}')
 
             # Commanding roll, pitch, yaw rate and z position
-            # self._cf.commander.send_zdistance_setpoint(0.0, -5.0, yaw_rate, z_distance)
+            self._cf.commander.send_zdistance_setpoint(0.0, -5.0, yaw_rate, z_distance)
             # self._cf.commander.send_setpoint(30.0, 0.0, 0.0, 40000)
             # self._cf.commander.send_position_setpoint(0.0, 30.0, DEAFULT_HEIGHT, 0.0)
 
@@ -155,7 +160,7 @@ class gateIMAV:
         time_passed = 0.0
         while time_passed < time_limit:
             # Commanding roll, pitch, yaw rate and z position
-            # self._cf.commander.send_zdistance_setpoint(0.0, -10, 0.0, z)
+            self._cf.commander.send_zdistance_setpoint(0.0, -10, 0.0, z)
             # log the data:
             self.log_data()
 
@@ -169,7 +174,7 @@ class gateIMAV:
             x = self._data['stateEstimate.x']
             y = self._data['stateEstimate.y']
             # self._cf.commander.send_position_setpoint(x, y, 0.0, 0.0)
-            # self._cf.commander.send_zdistance_setpoint(0.0, 0.0, 0.0, 0.0)
+            self._cf.commander.send_zdistance_setpoint(0.0, 0.0, 0.0, 0.0)
             self.log_data()
             time.sleep(0.05)
             time_passed += 0.05
