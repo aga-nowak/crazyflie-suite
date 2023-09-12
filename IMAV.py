@@ -1,5 +1,7 @@
 import logging
 import time
+
+# for logging data:
 # import the sys library
 import sys
 # import the os library
@@ -10,8 +12,14 @@ from cflib.crazyflie import Crazyflie
 from cflib.utils import uri_helper
 from cflib.crazyflie.log import LogConfig
 
+# for showing live data:
+from IPython import display
+from matplotlib import pyplot as plt
+
 URI = uri_helper.uri_from_env(default='radio://0/80/2M/FDE7E7E701')
 DEAFULT_HEIGHT = 1.0
+
+SHOW_DATA_LIVE = True
 
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
@@ -65,6 +73,13 @@ class gateIMAV:
         width = self._data['jevois.width']
         height = self._data['jevois.height']
 
+        if(SHOW_DATA_LIVE):
+            times = []
+            error_ys = []
+            error_xs = []
+            widths = []
+            heights = []
+
         time_passed = 0.0
         while time_passed < time_limit and max(width, height) < 180:
             # get z and jevois errors
@@ -73,6 +88,14 @@ class gateIMAV:
             error_y = self._data['jevois.errory']
             width = self._data['jevois.width']
             height = self._data['jevois.height']
+
+            if(SHOW_DATA_LIVE):
+                # add the data to the lists for live plotting
+                times.append(self.time)
+                error_ys.append(error_y)
+                error_xs.append(error_x)
+                widths.append(width)
+                heights.append(height)
 
             # log the data for post-analysis
             self.log_data()
@@ -97,6 +120,27 @@ class gateIMAV:
             self._cf.commander.send_zdistance_setpoint(0.0, -5.0, yaw_rate, z_distance)
             # self._cf.commander.send_setpoint(30.0, 0.0, 0.0, 40000)
             # self._cf.commander.send_position_setpoint(0.0, 30.0, DEAFULT_HEIGHT, 0.0)
+
+            if(SHOW_DATA_LIVE):
+                if(self.figure_handle == []):
+                    self.figure_handle = plt.figure('Live data')
+                    self.ax = self.figure_handle.add_subplot(111)
+                    plt.ion()
+                    #self.figure_handle.show()
+                    self.figure_handle.canvas.draw()
+                else:
+                    plt.figure('Live data')
+                
+                self.ax.clear()
+                self.ax.plot(times, error_xs, label='error_x')
+                self.ax.plot(times, error_ys, label='error_y')
+                self.ax.plot(times, widths, label='width')
+                self.ax.plot(times, heights, label='height')
+                self.ax.legend()
+                #        self.figure_handle.canvas.draw()
+                #        self.figure_handle.show()
+                display.clear_output(wait=True)
+                display.display(plt.gcf())
 
             time.sleep(0.05)
             time_passed += 0.05
