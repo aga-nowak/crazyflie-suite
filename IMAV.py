@@ -124,25 +124,24 @@ class gateIMAV:
             if(SHOW_DATA_LIVE):
                 if(self.figure_handle == []):
                     self.figure_handle = plt.figure('Live data')
-                    self.ax = self.figure_handle.add_subplot(111)
                     plt.ion()
-                    #self.figure_handle.show()
-                    self.figure_handle.canvas.draw()
                 else:
                     plt.figure('Live data')
                 
-                self.ax.clear()
-                self.ax.plot(times, error_xs, label='error_x')
-                self.ax.plot(times, error_ys, label='error_y')
-                self.ax.plot(times, widths, label='width')
-                self.ax.plot(times, heights, label='height')
-                self.ax.legend()
-                #        self.figure_handle.canvas.draw()
-                #        self.figure_handle.show()
-                display.clear_output(wait=True)
-                display.display(plt.gcf())
+                plt.plot(times, error_xs, label='error_x')
+                plt.plot(times, error_ys, label='error_y')
+                plt.plot(times, widths, label='width')
+                plt.plot(times, heights, label='height')
+                plt.legend()
+                plt.pause(0.01)
+                plt.draw()
 
-            time.sleep(0.05)
+
+            if(SHOW_DATA_LIVE):
+                time.sleep(0.04)
+            else:
+                time.sleep(0.05)
+                
             time_passed += 0.05
 
         print('Window passed')

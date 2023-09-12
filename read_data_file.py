@@ -39,6 +39,17 @@ if __name__ == '__main__':
     width = data[:,7]
     height = data[:,8]
 
+    # live plot:
+    figure_handle = plt.figure('Live data')
+    plt.ion()
+    for i in range(len(time)):
+        plt.clf()
+        plt.plot(time[:i], error_x[:i], label='error_x')
+        plt.plot(time[:i], error_y[:i], label='error_y')
+        plt.legend()
+        plt.pause(0.01)
+        plt.draw()
+
 
     plt.figure()
     plt.plot(time, x, label='x')
