@@ -14,7 +14,7 @@ python flight/log_flight.py \
     --space flight/space_cyberzoo.yaml \
     --estimator kalman \
     --uwb none \
-    --trajectory none \
+    --trajectory pitch \
     --optitrack none \
     --optitrack_id 1 \
     --uri radio://0/80/2M/E7E7E7E7E7
