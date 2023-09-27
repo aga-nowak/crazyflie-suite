@@ -369,7 +369,8 @@ class LogFlight:
 
         # set estimator
         if args["estimator"] == "kalman":
-            self._cf.param.set_value("stabilizer.estimator", 2)
+            self._cf.param.set_value("stabilizer.estimator", "2")
+            assert self._cf.param.get_value("stabilizer.estimator") == "2"
 
         print("Reset Estimator...")
         self.reset_estimator()
