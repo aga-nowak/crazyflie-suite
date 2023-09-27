@@ -45,8 +45,7 @@ class LogFlight:
         self._jr = JoystickReader(do_device_discovery=False)
 
         # Set flight mode
-        if self.args["trajectory"] is None or \
-                self.args["trajectory"][0] == "none":
+        if self.args["trajectory"] is None or self.args["trajectory"][0] == "none":
             self.mode = Mode.DONT_FLY
             print("Mode set to [DONT_FLY]")
         elif self.args["trajectory"][0] == "manual":

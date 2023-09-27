@@ -17,13 +17,13 @@ class FileLogger:
     external config.
     """
 
-    def __init__(self, crazyflie, configName, fileName):
+    def __init__(self, crazyflie, config_name, file_name):
         """ Initialize and run the example with the specified link_uri """
         self._cf = crazyflie
         self.is_connected = False
 
         # import log configs from logcfg.json
-        with open(configName) as json_config_file:
+        with open(config_name) as json_config_file:
             self._cfg_defs = json.load(json_config_file)
 
         # list of enabled configurations
@@ -37,7 +37,7 @@ class FileLogger:
         )  # can we scrap this? or do we need to be able to access these?
 
         # open logfile to write to
-        self._logfile = open(fileName, "w")
+        self._logfile = open(file_name, "w")
 
     def __del__(self):
         self._logfile.close()

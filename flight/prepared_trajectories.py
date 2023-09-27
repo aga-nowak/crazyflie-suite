@@ -4,7 +4,6 @@ Author: S. Pfeiffer, MAVLab
 """
 
 import random
-
 from flight.trajectories import *
 
 

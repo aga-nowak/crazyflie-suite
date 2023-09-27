@@ -4,7 +4,7 @@ from threading import Thread
 
 
 def trace(*args):
-    pass  # print( "".join(map(str,args)) )
+    pass
 
 
 # Create structs for reading various object types to speed up parsing.
