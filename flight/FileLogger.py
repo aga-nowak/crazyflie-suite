@@ -3,7 +3,6 @@ Contains the FileLogger class that can be used to log Crazyflie data to an exter
 Author: Sven Pfeiffer, MAVLab
 """
 
-import time
 import json
 
 from cflib.crazyflie.log import LogConfig
@@ -60,12 +59,12 @@ class FileLogger:
                 else:
                     print('Log config "{}" added'.format(cfg_name))
 
-    def enableAllConfigs(self):
+    def enable_all_configs(self):
         """ Enable all configs in the current logcfg file"""
         for cfg in self._cfg_defs:
-            self.enableConfig(cfg)
+            self.enable_config(cfg)
 
-    def enableConfig(self, cfg_name):
+    def enable_config(self, cfg_name):
         """ Enable a config defined in logcfg.json"""
         if cfg_name in self._cfg_defs:
             self._enabled_configs.append(cfg_name)
@@ -74,7 +73,7 @@ class FileLogger:
         else:
             print('Could not enable config "{}". Config not found.'.format(cfg_name))
 
-    def addConfig(self, config):
+    def add_config(self, config):
         """Defines and enables a new logconfig
         @parma[in]: config - a dictionary that defines the properties of the config. Fields:
         config["name"]: name of the configuration
@@ -87,7 +86,7 @@ class FileLogger:
         self._enabled_configs.append(config["name"])
         # self._external_configs.append(name)
 
-    def registerData(self, config, data_dict):
+    def register_data(self, config, data_dict):
         """Register data for an external logconfig. Data dict must contain the fields that
         correspond to variables of config
         """

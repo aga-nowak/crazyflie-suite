@@ -144,7 +144,7 @@ class LogFlight:
         # Logger setup
         logconfig = self.args["logconfig"]
         self.flogger = FileLogger(self._cf, logconfig, self.log_file)
-        self.flogger.enableAllConfigs()
+        self.flogger.enable_all_configs()
 
     def setup_optitrack(self):
         self.ot_id = self.args["optitrack_id"]
@@ -208,7 +208,7 @@ class LogFlight:
                 self.ot_position = pos_in_cf_frame
                 self.ot_attitude = att_in_cf_frame
                 self.ot_quaternion = quat_in_cf_frame
-                self.flogger.registerData("ot0", ot_dict)
+                self.flogger.register_data("ot0", ot_dict)
                 (self.filtered_pos[0], self.pos_filter_zi[0]) = scipy.signal.sosfilt(
                     self.ot_filter_sos, [self.ot_position[0]], zi=self.pos_filter_zi[0]
                 )
@@ -227,7 +227,7 @@ class LogFlight:
                     "otPitch1": att_in_cf_frame[1],
                     "otYaw1": att_in_cf_frame[2]
                 }
-                self.flogger.registerData("ot1", ot_dict)
+                self.flogger.register_data("ot1", ot_dict)
 
     def do_taskdump(self):
         self._cf.param.set_value("system.taskDump", "1")
@@ -247,7 +247,7 @@ class LogFlight:
 
         # Get one task dump
         for i in range(len(headers) - 1):
-            dump = console_log[headers[i] + 2: headers[i + 1]]
+            dump = console_log[headers[i] + 2 : headers[i + 1]]
 
             # Process strings: strip \n, \t, spaces, SYSLOAD:
             loads, stacks, labels = [], [], []
