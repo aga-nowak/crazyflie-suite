@@ -8,10 +8,8 @@ from datetime import datetime
 from pathlib import Path
 
 import yaml
-import numpy as np
 import pandas as pd
 import os
-import sys
 import enum
 import scipy.signal
 
@@ -19,21 +17,20 @@ import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie import Console
 from cfclient.utils.input import JoystickReader
-# from cfclient.utils.config import Config
 
 import flight.utils as util
 from flight.FileLogger import FileLogger
 from flight.NatNetClient import NatNetClient
 
-# TODO: merge these? (prepared trajectories and trajectories)
-from flight.trajectories import takeoff, landing
 from flight.prepared_trajectories import *
+
 
 class Mode(enum.Enum):
     MANUAL = 1
     AUTO = 2
     MODE_SWITCH = 3
     DONT_FLY = 4
+
 
 class LogFlight():
     def __init__(self, args):
@@ -128,7 +125,6 @@ class LogFlight():
 
         return fname
 
-
     def setup_logger(self):
         # Create filename from options and date
         self.log_file = self.get_filename()
@@ -149,7 +145,7 @@ class LogFlight():
         self.ot_quaternion = np.zeros(4)
         self.filtered_pos = np.zeros(3)
         self.ot_filter_sos = scipy.signal.butter(N=4, Wn=0.1, btype='low',
-                                            analog=False, output='sos')
+                                                 analog=False, output='sos')
         self.pos_filter_zi = [scipy.signal.sosfilt_zi(self.ot_filter_sos),
                               scipy.signal.sosfilt_zi(self.ot_filter_sos),
                               scipy.signal.sosfilt_zi(self.ot_filter_sos)]
@@ -162,7 +158,6 @@ class LogFlight():
         print("OptiTrack streaming client started")
 
         # TODO: do we need to return StreamingClient?
-
 
     def reset_estimator(self):
         # Kalman
@@ -178,6 +173,7 @@ class LogFlight():
                 self._cf.param.set_value("complementaryFilter.reset", "0")
             except:
                 pass
+
     def ot_receive_new_frame(self, *args, **kwargs):
         pass
 
@@ -191,7 +187,7 @@ class LogFlight():
 
             idx = self.ot_id.index(id)
 
-            if idx==0:
+            if idx == 0:
                 # main drone
                 ot_dict = {
                     "otX0": pos_in_cf_frame[0],
@@ -214,7 +210,7 @@ class LogFlight():
                 (self.filtered_pos[2], self.pos_filter_zi[2]) = scipy.signal.sosfilt(
                     self.ot_filter_sos, [self.ot_position[2]], zi=self.pos_filter_zi[2]
                 )
-            elif idx==1:
+            elif idx == 1:
                 ot_dict = {
                     "otX1": pos_in_cf_frame[0],
                     "otY1": pos_in_cf_frame[1],
@@ -224,8 +220,6 @@ class LogFlight():
                     "otYaw1": att_in_cf_frame[2]
                 }
                 self.flogger.registerData("ot1", ot_dict)
-
-
 
     def do_taskdump(self):
         self._cf.param.set_value("system.taskDump", "1")
@@ -245,7 +239,7 @@ class LogFlight():
 
         # Get one task dump
         for i in range(len(headers) - 1):
-            dump = console_log[headers[i] + 2 : headers[i + 1]]
+            dump = console_log[headers[i] + 2: headers[i + 1]]
 
             # Process strings: strip \n, \t, spaces, SYSLOAD:
             loads, stacks, labels = [], [], []
@@ -275,7 +269,6 @@ class LogFlight():
         else:
             print("No task dump data found")
 
-
     def controller_connected(self):
         """ Return True if a controller is connected """
         return len(self._jr.available_devices()) > 0
@@ -285,7 +278,7 @@ class LogFlight():
         for d in self._jr.available_devices():
             devs.append(d.name)
 
-        if len(devs)==1:
+        if len(devs) == 1:
             input_device = 0
         else:
             print("Multiple controllers detected:")
@@ -325,7 +318,6 @@ class LogFlight():
             if self.mode == Mode.MODE_SWITCH:
                 self._jr.alt1_updated.add_callback(self.mode_switch_cb)
 
-
     def _connected(self, link):
         """This callback is called form the Crazyflie API when a Crazyflie
         has been connected and the TOCs have been downloaded."""
@@ -355,7 +347,7 @@ class LogFlight():
             print("Waiting for Crazyflie connection...")
             time.sleep(2)
             timeout -= 1
-            if timeout<=0:
+            if timeout <= 0:
                 return False
 
         # Wait for optitrack
@@ -371,7 +363,7 @@ class LogFlight():
 
         print("Reset Estimator...")
         self.reset_estimator()
-        time.sleep(2)   # wait for kalman to stabilize
+        time.sleep(2)  # wait for kalman to stabilize
 
         return True
 
@@ -419,14 +411,14 @@ class LogFlight():
 
     def manual_flight(self):
         self.is_in_manual_control = True
-        while(self.is_in_manual_control):
-            if self.args["optitrack"]=="state":
+        while (self.is_in_manual_control):
+            if self.args["optitrack"] == "state":
                 # self._cf.extpos.send_extpos(
                 #     self.filtered_pos[0], self.filtered_pos[1], self.filtered_pos[2]
                 #     )
                 self._cf.extpos.send_extpos(
                     self.ot_position[0], self.ot_position[1], self.ot_position[2]
-                    )
+                )
                 # self._cf.extpos.send_extpose(
                 #     self.ot_position[0], self.ot_position[1], self.ot_position[2],
                 #     self.ot_quaternion[0], self.ot_quaternion[1], self.ot_quaternion[2], self.ot_quaternion[3]
@@ -480,7 +472,6 @@ class LogFlight():
         setpoints += landing(home["x"], home["y"], altitude, 0.0)
 
         return setpoints
-
 
     def follow_setpoints(self, cf, setpoints, optitrack):
         # Counter for task dump logging
@@ -557,7 +548,6 @@ class LogFlight():
                 time.sleep(wait)
                 cf.commander.send_stop_setpoint()
 
-
     def setup_console_dump(self):
         # Console dump file
         self.console_log = []
@@ -575,6 +565,7 @@ class LogFlight():
         # TODO: add timestamps / ticks (like logging) to this
         if self.console_dump_enabled:
             self.process_taskdump(self.console_log)
+
 
 if __name__ == "__main__":
 
@@ -611,7 +602,6 @@ if __name__ == "__main__":
     lf = LogFlight(args)
     lf.connect_crazyflie(args["uri"])
     # Set up print connection to console
-    # TODO: synchronize this with FileLogger: is this possible?
     lf.setup_console_dump()
 
     try:

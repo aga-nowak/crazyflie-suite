@@ -31,7 +31,7 @@ Files needed:
 - A logging configuration, like [here](flight/logcfg.json)
 - A file specifying the flight space, like [here](flight/space_cyberzoo.yaml)
 
-A flight can be started by running `python flight/logFlight.py`. Several arguments can be supplied:
+A flight can be started by running `python flight/log_flight.py`. Several arguments can be supplied:
 - `--fileroot`: folder to store the log
 - `--keywords`: keywords to identify your run (optional)
 - `--logconfig`: location of the logging configuration
