@@ -10,7 +10,7 @@ setup(
         "pandas",
         "matplotlib",
         "jupyterlab",
-        "pyyaml",
+        "pyyaml==5.3.1",
         "pre-commit",
     ],
 )
