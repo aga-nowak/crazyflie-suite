@@ -7,7 +7,7 @@ Ideally, make use of a Python virtual environment:
 ```bash
 $ sudo apt install python3-venv
 $ git clone https://github.com/esanchezlaulhe/crazyflie-suite-jevois.git
-$ cd crazyflie-suite
+$ cd crazyflie-suite-jevois
 $ python3 -m venv venv
 $ source venv/bin/activate
 ```

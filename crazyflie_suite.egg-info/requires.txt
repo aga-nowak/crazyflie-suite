@@ -1,8 +1,8 @@
-cflib
 cfclient
+cflib
+jupyterlab
+matplotlib
 numpy
 pandas
-matplotlib
-jupyterlab
-pyyaml
 pre-commit
+pyyaml
