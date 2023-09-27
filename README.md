@@ -28,7 +28,7 @@ $ pre-commit install
 # Logging a flight
 
 Files needed:
-- A logging configuration, like [here](flight/logcfg.json)
+- A logging configuration, like [here](configs/logcfg/example_logcfg.json)
 - A file specifying the flight space, like [here](flight/space_cyberzoo.yaml)
 
 A flight can be started by running `python flight/log_flight.py`. Several arguments can be supplied:
@@ -43,7 +43,7 @@ A flight can be started by running `python flight/log_flight.py`. Several argume
 - `--optitrack`: how to use OptiTrack (`none`, `logging` or `state`, optional)
 - `--optitrack_id`: if using OptiTrack, provide the rigid body ID here (optional)
 
-A simple example can be found [here](configs/example_cyberzoo.sh).
+A simple example can be found [here](configs/flightcfg/example_flightcfg.sh).
 
 ## Autonomous flight
 Note that some options are incompatible. For instance, without UWB (`none`), you need OptiTrack for providing state (`state`). If either UWB or a Flowdeck (`--flow`) is used, the Kalman filter has to be selected.
