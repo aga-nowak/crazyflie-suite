@@ -29,7 +29,7 @@ $ pre-commit install
 
 Files needed:
 - A logging configuration, like [here](configs/logcfg/example_logcfg.json)
-- A file specifying the flight space, like [here](flight/space_cyberzoo.yaml)
+- A file specifying the flight space, like [here](configs/space_cyberzoo.yaml)
 
 A flight can be started by running `python flight/log_flight.py`. Several arguments can be supplied:
 - `--fileroot`: folder to store the log

@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
 # Check whether pwd is project root
-if [[ "${PWD##*/}" != crazyflie-suite-jevois ]]; then
+if [[ "${PWD##*/}" != crazyflie-suite ]]; then
     echo "Should be run from project root, exiting"
     exit 1
 fi
 
+# Run
 python flight/log_flight.py \
     --fileroot data \
     --filename example\
