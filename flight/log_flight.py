@@ -23,6 +23,7 @@ from flight.FileLogger import FileLogger
 from flight.NatNetClient import NatNetClient
 
 from flight.prepared_trajectories import *
+import flight.pitch_flight_commands as pitch_commander
 
 
 class Mode(enum.Enum):
@@ -30,9 +31,10 @@ class Mode(enum.Enum):
     AUTO = 2
     MODE_SWITCH = 3
     DONT_FLY = 4
+    PITCH_CONTROL = 5
 
 
-class LogFlight():
+class LogFlight:
     def __init__(self, args):
         self.args = args
         self.optitrack_enabled = False
@@ -50,6 +52,9 @@ class LogFlight():
         elif self.args["trajectory"][0] == "manual":
             self.mode = Mode.MANUAL
             print("Mode set to [MANUAL]")
+        elif self.args["trajectory"][0] == "pitch":
+            self.mode = Mode.PITCH_CONTROL
+            print("Mode set to [PITCH_CONTROL]")
         elif self.args["safetypilot"]:
             self.mode = Mode.MODE_SWITCH
             print("Mode set to [MODE_SWITCH]")
@@ -60,9 +65,13 @@ class LogFlight():
         # Setup for specified mode
         if self.mode == Mode.AUTO:
             self.is_in_manual_control = False
-            # Make sure drone is setup to perform autonomous flight
+            # Make sure drone is set up to perform autonomous flight
             if args["uwb"] == "none":
                 assert args["optitrack"] == "state", "OptiTrack state needed in absence of UWB"
+                assert args["estimator"] == "kalman", "OptiTrack state needs Kalman estimator"
+        elif self.mode == Mode.PITCH_CONTROL:
+            self.is_in_manual_control = False
+            if args["optitrack"] == "state":
                 assert args["estimator"] == "kalman", "OptiTrack state needs Kalman estimator"
         elif self.mode == Mode.DONT_FLY:
             self.is_in_manual_control = False
@@ -72,7 +81,7 @@ class LogFlight():
             self.setup_controller(map="j303")
             self.is_in_manual_control = True
 
-        # Setup the logging framework
+        # Set up the logging framework
         self.setup_logger()
 
         # Setup optitrack if required
@@ -80,7 +89,7 @@ class LogFlight():
             self.setup_optitrack()
 
     def get_filename(self):
-        # create default fileroot if not provided
+        # create default file root if not provided
         if self.args["fileroot"] is None:
             date = datetime.today().strftime(r"%Y_%m_%d")
             self.args["fileroot"] = "data/" + date
@@ -379,6 +388,9 @@ class LogFlight():
                         pass
                 except KeyboardInterrupt:
                     print("Flight stopped")
+            elif self.mode == Mode.PITCH_CONTROL:
+                print("Flying with pitch control")
+                self.fly_with_pitch()
             else:
                 # Build trajectory
                 setpoints = self.build_trajectory(self.args["trajectory"], self.args["space"])
@@ -411,7 +423,7 @@ class LogFlight():
 
     def manual_flight(self):
         self.is_in_manual_control = True
-        while (self.is_in_manual_control):
+        while self.is_in_manual_control:
             if self.args["optitrack"] == "state":
                 # self._cf.extpos.send_extpos(
                 #     self.filtered_pos[0], self.filtered_pos[1], self.filtered_pos[2]
@@ -424,6 +436,15 @@ class LogFlight():
                 #     self.ot_quaternion[0], self.ot_quaternion[1], self.ot_quaternion[2], self.ot_quaternion[3]
                 #     )
             time.sleep(0.01)
+
+    def fly_with_pitch(self):
+        try:
+            pitch_commander.takeoff(self)
+            pitch_commander.fly_forward(self)
+            pitch_commander.landing(self)
+        except KeyboardInterrupt:
+            print("Emergency landing!")
+            pitch_commander.landing(self)
 
     def build_trajectory(self, trajectories, space):
         # Load yaml file with space specification
@@ -443,7 +464,6 @@ class LogFlight():
         # Takeoff
         setpoints = takeoff(home["x"], home["y"], altitude, 0.0)
         for trajectory in trajectories:
-            # If nothing, only nothing
             if trajectory == "nothing":
                 setpoints = None
                 return setpoints
@@ -556,7 +576,6 @@ class LogFlight():
         self.console_dump_enabled = True
 
     def _console_cb(self, text):
-        # print(text)
         self.console_log.append(text)
 
     def end(self):
