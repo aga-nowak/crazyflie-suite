@@ -10,7 +10,7 @@ from pathlib import Path
 import yaml
 import pandas as pd
 import os
-import enum
+from enum import Enum
 import scipy.signal
 
 import cflib.crtp
@@ -26,7 +26,7 @@ from flight.prepared_trajectories import *
 import flight.pitch_flight_commands as pitch_commander
 
 
-class Mode(enum.Enum):
+class Mode(Enum):
     MANUAL = 1
     AUTO = 2
     MODE_SWITCH = 3
@@ -330,9 +330,7 @@ class LogFlight:
         """This callback is called form the Crazyflie API when a Crazyflie
         has been connected and the TOCs have been downloaded."""
         print("Connected to %s" % link)
-        # set estimator
-        # if args["estimator"]=="kalman":
-        #     self._cf.param.set_value("stabilizer.estimator", "2")
+
         self.flogger.start()
         print("logging started")
 
@@ -368,6 +366,10 @@ class LogFlight:
                     return False
 
             print("OptiTrack fix acquired")
+
+        # set estimator
+        if args["estimator"] == "kalman":
+            self._cf.param.set_value("stabilizer.estimator", 2)
 
         print("Reset Estimator...")
         self.reset_estimator()
