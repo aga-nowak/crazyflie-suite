@@ -13,5 +13,6 @@ setup(
         "pyyaml==5.3.1",
         "pre-commit",
         "scipy",
+        "IPython",
     ],
 )
