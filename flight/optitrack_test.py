@@ -40,7 +40,7 @@ def receiveNewFrame(
     isRecording,
     trackedModelsChanged,
 ):
-    print("received new mocap frame")
+    print("Received new mocap frame")
 
 
 # This is a callback function that gets connected to the NatNet client. It is called once per rigid body per frame
@@ -58,4 +58,4 @@ streamingClient.rigidBodyListener = receiveRigidBodyFrame
 # Start up the streaming client now that the callbacks are set up.
 # This will run perpetually, and operate on a separate thread.
 streamingClient.run()
-print("streaming client started")
+print("Streaming client started")

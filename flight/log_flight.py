@@ -8,34 +8,33 @@ from datetime import datetime
 from pathlib import Path
 
 import yaml
-import numpy as np
 import pandas as pd
 import os
-import sys
-import enum
+from enum import Enum
 import scipy.signal
 
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie import Console
 from cfclient.utils.input import JoystickReader
-from cfclient.utils.config import Config
 
 import flight.utils as util
 from flight.FileLogger import FileLogger
 from flight.NatNetClient import NatNetClient
 
-# TODO: merge these? (prepared trajectories and trajectories)
-from flight.trajectories import takeoff, landing
 from flight.prepared_trajectories import *
+import flight.pitch_flight_commands as pitch_commander
 
-class Mode(enum.Enum):
+
+class Mode(Enum):
     MANUAL = 1
     AUTO = 2
     MODE_SWITCH = 3
     DONT_FLY = 4
+    PITCH_CONTROL = 5
 
-class LogFlight():
+
+class LogFlight:
     def __init__(self, args):
         self.args = args
         self.optitrack_enabled = False
@@ -46,36 +45,42 @@ class LogFlight():
         self._jr = JoystickReader(do_device_discovery=False)
 
         # Set flight mode
-        if self.args["trajectory"] is None or \
-                self.args["trajectory"][0] == "none":
+        if self.args["trajectory"] is None or self.args["trajectory"][0] == "none":
             self.mode = Mode.DONT_FLY
             print("Mode set to [DONT_FLY]")
-        elif self.args["trajectory"][0] == "manual": 
+        elif self.args["trajectory"][0] == "manual":
             self.mode = Mode.MANUAL
             print("Mode set to [MANUAL]")
+        elif self.args["trajectory"][0] == "pitch":
+            self.mode = Mode.PITCH_CONTROL
+            print("Mode set to [PITCH_CONTROL]")
         elif self.args["safetypilot"]:
             self.mode = Mode.MODE_SWITCH
             print("Mode set to [MODE_SWITCH]")
         else:
             self.mode = Mode.AUTO
             print("Mode set to [AUTO]")
-        
+
         # Setup for specified mode
         if self.mode == Mode.AUTO:
             self.is_in_manual_control = False
-            # Make sure drone is setup to perform autonomous flight
+            # Make sure drone is set up to perform autonomous flight
             if args["uwb"] == "none":
                 assert args["optitrack"] == "state", "OptiTrack state needed in absence of UWB"
+                assert args["estimator"] == "kalman", "OptiTrack state needs Kalman estimator"
+        elif self.mode == Mode.PITCH_CONTROL:
+            self.is_in_manual_control = False
+            if args["optitrack"] == "state":
                 assert args["estimator"] == "kalman", "OptiTrack state needs Kalman estimator"
         elif self.mode == Mode.DONT_FLY:
             self.is_in_manual_control = False
         else:
             # Check if controller is connected
             assert self.controller_connected(), "No controller detected."
-            self.setup_controller(map="flappy")
+            self.setup_controller(map="j303")
             self.is_in_manual_control = True
 
-        # Setup the logging framework
+        # Set up the logging framework
         self.setup_logger()
 
         # Setup optitrack if required
@@ -83,13 +88,13 @@ class LogFlight():
             self.setup_optitrack()
 
     def get_filename(self):
-        # create default fileroot if not provided
+        # create default file root if not provided
         if self.args["fileroot"] is None:
             date = datetime.today().strftime(r"%Y_%m_%d")
             self.args["fileroot"] = "data/" + date
-        
-        fileroot = self.args["fileroot"] 
-        
+
+        fileroot = self.args["fileroot"]
+
         # create default filename if not provided
         if self.args["filename"] is None:
             estimator = self.args["estimator"]
@@ -105,7 +110,7 @@ class LogFlight():
                 options = "{}+{}+optitrackstate+{}".format(estimator, uwb, traj)
             else:
                 options = "{}+{}+{}".format(estimator, uwb, traj)
-            
+
             name = "{}+{}.csv".format(date, options)
             fname = os.path.normpath(os.path.join(os.getcwd(), fileroot, name))
 
@@ -140,7 +145,7 @@ class LogFlight():
         # Logger setup
         logconfig = self.args["logconfig"]
         self.flogger = FileLogger(self._cf, logconfig, self.log_file)
-        self.flogger.enableAllConfigs()
+        self.flogger.enable_all_configs()
 
     def setup_optitrack(self):
         self.ot_id = self.args["optitrack_id"]
@@ -149,7 +154,7 @@ class LogFlight():
         self.ot_quaternion = np.zeros(4)
         self.filtered_pos = np.zeros(3)
         self.ot_filter_sos = scipy.signal.butter(N=4, Wn=0.1, btype='low',
-                                            analog=False, output='sos')
+                                                 analog=False, output='sos')
         self.pos_filter_zi = [scipy.signal.sosfilt_zi(self.ot_filter_sos),
                               scipy.signal.sosfilt_zi(self.ot_filter_sos),
                               scipy.signal.sosfilt_zi(self.ot_filter_sos)]
@@ -162,7 +167,6 @@ class LogFlight():
         print("OptiTrack streaming client started")
 
         # TODO: do we need to return StreamingClient?
-
 
     def reset_estimator(self):
         # Kalman
@@ -178,6 +182,7 @@ class LogFlight():
                 self._cf.param.set_value("complementaryFilter.reset", "0")
             except:
                 pass
+
     def ot_receive_new_frame(self, *args, **kwargs):
         pass
 
@@ -188,10 +193,10 @@ class LogFlight():
             pos_in_cf_frame = util.ot2control(position)
             att_in_cf_frame = util.quat2euler(rotation)
             quat_in_cf_frame = util.ot2control_quat(rotation)
-            
+
             idx = self.ot_id.index(id)
 
-            if idx==0:
+            if idx == 0:
                 # main drone
                 ot_dict = {
                     "otX0": pos_in_cf_frame[0],
@@ -204,7 +209,7 @@ class LogFlight():
                 self.ot_position = pos_in_cf_frame
                 self.ot_attitude = att_in_cf_frame
                 self.ot_quaternion = quat_in_cf_frame
-                self.flogger.registerData("ot0", ot_dict)
+                self.flogger.register_data("ot0", ot_dict)
                 (self.filtered_pos[0], self.pos_filter_zi[0]) = scipy.signal.sosfilt(
                     self.ot_filter_sos, [self.ot_position[0]], zi=self.pos_filter_zi[0]
                 )
@@ -214,7 +219,7 @@ class LogFlight():
                 (self.filtered_pos[2], self.pos_filter_zi[2]) = scipy.signal.sosfilt(
                     self.ot_filter_sos, [self.ot_position[2]], zi=self.pos_filter_zi[2]
                 )
-            elif idx==1:
+            elif idx == 1:
                 ot_dict = {
                     "otX1": pos_in_cf_frame[0],
                     "otY1": pos_in_cf_frame[1],
@@ -223,9 +228,7 @@ class LogFlight():
                     "otPitch1": att_in_cf_frame[1],
                     "otYaw1": att_in_cf_frame[2]
                 }
-                self.flogger.registerData("ot1", ot_dict)
-
-
+                self.flogger.register_data("ot1", ot_dict)
 
     def do_taskdump(self):
         self._cf.param.set_value("system.taskDump", "1")
@@ -275,7 +278,6 @@ class LogFlight():
         else:
             print("No task dump data found")
 
-
     def controller_connected(self):
         """ Return True if a controller is connected """
         return len(self._jr.available_devices()) > 0
@@ -284,23 +286,22 @@ class LogFlight():
         devs = []
         for d in self._jr.available_devices():
             devs.append(d.name)
-        
-        if len(devs)==1:
+
+        if len(devs) == 1:
             input_device = 0
         else:
             print("Multiple controllers detected:")
             for i, dev in enumerate(devs):
                 print(" - Controller #{}: {}".format(i, dev))
-            
             input_device = int(input("Select controller: "))
 
         if not input_device in range(len(devs)):
             raise ValueError
-        
+
         self._jr.start_input(devs[input_device])
         self._jr.set_input_map(devs[input_device], map)
 
-    def connect_crazyflie(self, uri):   
+    def connect_crazyflie(self, uri):
         """Connect to a Crazyflie on the given link uri"""
         # Connect some callbacks from the Crazyflie API
         self._cf.connected.add_callback(self._connected)
@@ -321,18 +322,14 @@ class LogFlight():
             #                                          enabled))
             self._cf.open_link(uri)
             self._jr.input_updated.add_callback(self.controller_input_cb)
-            
+
             if self.mode == Mode.MODE_SWITCH:
                 self._jr.alt1_updated.add_callback(self.mode_switch_cb)
-
 
     def _connected(self, link):
         """This callback is called form the Crazyflie API when a Crazyflie
         has been connected and the TOCs have been downloaded."""
         print("Connected to %s" % link)
-        # set estimator
-        if args["estimator"]=="kalman":
-            self._cf.param.set_value("stabilizer.estimator", "2")
         self.flogger.start()
         print("logging started")
 
@@ -355,9 +352,9 @@ class LogFlight():
             print("Waiting for Crazyflie connection...")
             time.sleep(2)
             timeout -= 1
-            if timeout<=0:
+            if timeout <= 0:
                 return False
-        
+
         # Wait for optitrack
         if self.optitrack_enabled:
             while (self.ot_position == 0).any():
@@ -369,12 +366,20 @@ class LogFlight():
 
             print("OptiTrack fix acquired")
 
+        # set estimator
+        if args["estimator"] == "kalman":
+            self._cf.param.set_value("stabilizer.estimator", "2")
+            assert self._cf.param.get_value("stabilizer.estimator") == "2"
+        else:
+            self._cf.param.set_value("stabilizer.estimator", "1")
+            assert self._cf.param.get_value("stabilizer.estimator") == "1"
+
         print("Reset Estimator...")
         self.reset_estimator()
-        time.sleep(2)   # wait for kalman to stabilize
+        time.sleep(2)  # wait for kalman to stabilize
 
         return True
-        
+
     def start_flight(self):
         if self.ready_to_fly():
             if self.mode == Mode.MANUAL:
@@ -387,6 +392,9 @@ class LogFlight():
                         pass
                 except KeyboardInterrupt:
                     print("Flight stopped")
+            elif self.mode == Mode.PITCH_CONTROL:
+                print("Flying with pitch control")
+                self.fly_with_pitch()
             else:
                 # Build trajectory
                 setpoints = self.build_trajectory(self.args["trajectory"], self.args["space"])
@@ -419,19 +427,28 @@ class LogFlight():
 
     def manual_flight(self):
         self.is_in_manual_control = True
-        while(self.is_in_manual_control):
-            if self.args["optitrack"]=="state":
+        while self.is_in_manual_control:
+            if self.args["optitrack"] == "state":
                 # self._cf.extpos.send_extpos(
                 #     self.filtered_pos[0], self.filtered_pos[1], self.filtered_pos[2]
                 #     )
                 self._cf.extpos.send_extpos(
                     self.ot_position[0], self.ot_position[1], self.ot_position[2]
-                    )
+                )
                 # self._cf.extpos.send_extpose(
                 #     self.ot_position[0], self.ot_position[1], self.ot_position[2],
                 #     self.ot_quaternion[0], self.ot_quaternion[1], self.ot_quaternion[2], self.ot_quaternion[3]
                 #     )
             time.sleep(0.01)
+
+    def fly_with_pitch(self):
+        try:
+            pitch_commander.takeoff(self)
+            pitch_commander.fly_forward(self)
+            pitch_commander.landing(self)
+        except KeyboardInterrupt:
+            print("Emergency landing!")
+            pitch_commander.landing(self)
 
     def build_trajectory(self, trajectories, space):
         # Load yaml file with space specification
@@ -451,7 +468,6 @@ class LogFlight():
         # Takeoff
         setpoints = takeoff(home["x"], home["y"], altitude, 0.0)
         for trajectory in trajectories:
-            # If nothing, only nothing
             if trajectory == "nothing":
                 setpoints = None
                 return setpoints
@@ -480,7 +496,6 @@ class LogFlight():
         setpoints += landing(home["x"], home["y"], altitude, 0.0)
 
         return setpoints
-
 
     def follow_setpoints(self, cf, setpoints, optitrack):
         # Counter for task dump logging
@@ -557,7 +572,6 @@ class LogFlight():
                 time.sleep(wait)
                 cf.commander.send_stop_setpoint()
 
-
     def setup_console_dump(self):
         # Console dump file
         self.console_log = []
@@ -566,7 +580,6 @@ class LogFlight():
         self.console_dump_enabled = True
 
     def _console_cb(self, text):
-        # print(text)
         self.console_log.append(text)
 
     def end(self):
@@ -611,7 +624,6 @@ if __name__ == "__main__":
     lf = LogFlight(args)
     lf.connect_crazyflie(args["uri"])
     # Set up print connection to console
-    # TODO: synchronize this with FileLogger: is this possible?
     lf.setup_console_dump()
 
     try:

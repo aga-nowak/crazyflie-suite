@@ -12,5 +12,6 @@ setup(
         "jupyterlab",
         "pyyaml==5.3.1",
         "pre-commit",
+        "scipy",
     ],
 )

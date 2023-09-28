@@ -7,5 +7,5 @@ analysis/*
 **/*.egg-info/
 **/cache/
 **/.ipynb_checkpoints/
-
 !**/example*
+cache/*

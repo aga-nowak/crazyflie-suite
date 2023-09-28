@@ -6,7 +6,11 @@ Flight and data analysis framework for Crazyflies.
 Ideally, make use of a Python virtual environment:
 ```bash
 $ sudo apt install python3-venv
+<<<<<<< HEAD
 $ git clone https://github.com/Huizerd/crazyflie-suite.git
+=======
+$ git clone https://github.com/aga-nowak/crazyflie-suite.git
+>>>>>>> fly_with_pitch
 $ cd crazyflie-suite
 $ python3 -m venv venv
 $ source venv/bin/activate
@@ -28,10 +32,10 @@ $ pre-commit install
 # Logging a flight
 
 Files needed:
-- A logging configuration, like [here](flight/logcfg.json)
-- A file specifying the flight space, like [here](flight/space_cyberzoo.yaml)
+- A logging configuration, like [here](configs/logcfg/example_logcfg.json)
+- A file specifying the flight space, like [here](configs/space_cyberzoo.yaml)
 
-A flight can be started by running `python flight/logFlight.py`. Several arguments can be supplied:
+A flight can be started by running `python flight/log_flight.py`. Several arguments can be supplied:
 - `--fileroot`: folder to store the log
 - `--keywords`: keywords to identify your run (optional)
 - `--logconfig`: location of the logging configuration
@@ -43,7 +47,7 @@ A flight can be started by running `python flight/logFlight.py`. Several argumen
 - `--optitrack`: how to use OptiTrack (`none`, `logging` or `state`, optional)
 - `--optitrack_id`: if using OptiTrack, provide the rigid body ID here (optional)
 
-A simple example can be found [here](configs/example_cyberzoo.sh).
+A simple example can be found [here](configs/flightcfg/example_flightcfg.sh).
 
 ## Autonomous flight
 Note that some options are incompatible. For instance, without UWB (`none`), you need OptiTrack for providing state (`state`). If either UWB or a Flowdeck (`--flow`) is used, the Kalman filter has to be selected.
