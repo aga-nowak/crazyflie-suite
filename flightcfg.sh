@@ -9,12 +9,12 @@ fi
 # Run
 python flight/log_flight.py \
     --fileroot data \
-    --filename example\
+    --filename optitrack-state_pitch-10 \
     --logconfig configs/logcfg/example_logcfg.json \
-    --space flight/space_cyberzoo.yaml \
+    --space configs/space_cyberzoo.yaml \
     --estimator kalman \
     --uwb none \
     --trajectory pitch \
-    --optitrack none \
+    --optitrack state \
     --optitrack_id 1 \
     --uri radio://0/80/2M/E7E7E7E7E7

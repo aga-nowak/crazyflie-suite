@@ -5,14 +5,12 @@ crazyflie_suite.egg-info/SOURCES.txt
 crazyflie_suite.egg-info/dependency_links.txt
 crazyflie_suite.egg-info/requires.txt
 crazyflie_suite.egg-info/top_level.txt
-flight/DataDescriptions.py
 flight/FileLogger.py
-flight/MoCapData.py
 flight/NatNetClient.py
 flight/__init__.py
 flight/log_flight.py
 flight/optitrack_test.py
+flight/pitch_flight_commands.py
 flight/prepared_trajectories.py
-flight/test.py
 flight/trajectories.py
 flight/utils.py
